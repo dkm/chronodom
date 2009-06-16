@@ -44,12 +44,12 @@ class Chrono(Thread):
 
 class ChronoDom:
     def __init__(self):
+        print "INIT"
         self.xml = gtk.glade.XML("chronodom.glade")
         self.w = self.xml.get_widget("window1")
         self.xml.signal_autoconnect(self)
-        self.w.connect("delete_event", gtk.main_quit)
+        self.w.connect("delete_event", self.terminate)
         self.w.show_all()
-
         self.chrono1_btn = self.xml.get_widget("chrono_button1")
         self.chrono1 = None
 
@@ -66,9 +66,14 @@ class ChronoDom:
         column = gtk.TreeViewColumn("Temps",renderer, text=0)
         column.set_resizable(True)
         self.tree.append_column(column)
-
-        self.fc = self.xml.get_widget("filechooserdialog1")
+        print "MAIN!"
         gtk.main()
+        
+    def terminate(self, arg1, arg2):
+        if self.chrono1 != None:
+            self.chrono1.please_loop = False
+
+        gtk.main_quit()
 
     def insert_row(self, col, parent=None):
         myiter = self.treestore.prepend(None)
@@ -86,12 +91,16 @@ class ChronoDom:
             self.chrono1 = None
             self.start_btn.set_label("START")
 
-    
+    def on_clear_button_clicked(self, widget):
+        self.treestore.clear()
+
     def on_save_button_clicked(self, widget):
         chooser = gtk.FileChooserDialog(
             title="Save Output",action=gtk.FILE_CHOOSER_ACTION_SAVE,
             buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,
                      gtk.STOCK_SAVE,gtk.RESPONSE_OK))
+        chooser.set_do_overwrite_confirmation(True)
+
         response = chooser.run()
         filename = chooser.get_filename()
 
@@ -106,10 +115,9 @@ class ChronoDom:
 
         while treeiter != None:
             value = self.treestore.get_value(treeiter, 0)
-            print >>fout, value, ","
+            print >>fout, value
             treeiter = self.treestore.iter_next(treeiter)
         fout.close()
-
 
     def on_chrono_button1_clicked(self, widget):
         print "start1"
@@ -131,5 +139,8 @@ class ChronoDom:
 
 
 if __name__ == '__main__':
+    print "STARTING"
     gtk.gdk.threads_init()
+    gtk.gdk.threads_enter()
+
     ChronoDom()
